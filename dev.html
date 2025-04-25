@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Granite Blog - Dev Portal</title>
+  <meta property="og:image" content="https://static.wikia.nocookie.net/minecraft_gamepedia/images/7/7e/Granite_JE2_BE2.png/revision/latest?cb=20200315183719">
+  <link rel="icon" href="https://static.wikia.nocookie.net/minecraft_gamepedia/images/7/7e/Granite_JE2_BE2.png/revision/latest?cb=20200315183719" type="image/png">
+  <style>
+    body {
+      background-color: #fdf6ee;
+      font-family: 'Open Sans', sans-serif;
+      color: #4e342e;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      font-family: 'Playfair Display', serif;
+      color: #d4a373;
+    }
+
+    form {
+      max-width: 700px;
+      margin: 2rem auto;
+      background: #fff8ef;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      border: 1px solid #e3cbb4;
+      border-radius: 8px;
+      background-color: #fffdf8;
+      font-size: 1rem;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .custom-file-label {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      background-color: #d4a373;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      text-align: center;
+      transition: background 0.3s ease;
+    }
+
+    .custom-file-label:hover {
+      background-color: #c78b58;
+    }
+
+    #file-name-display {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #7d5a4d;
+    }
+
+    #image-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    #image-preview img {
+      max-width: 100px;
+      max-height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    button {
+      margin-top: 2rem;
+      padding: 0.75rem 2rem;
+      background-color: #d4a373;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    button:hover {
+      background-color: #c78b58;
+    }
+
+    .post-list {
+      margin-top: 2rem;
+      background-color: #fff8ef;
+      padding: 1rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .post-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 1rem;
+      border-bottom: 1px solid #e3cbb4;
+    }
+
+    .delete-btn {
+      background-color: #e57373;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .delete-btn:hover {
+      background-color: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <h1>Granite Blog - Dev Portal</h1>
+
+  <!-- Form for creating a post -->
+  <form id="postForm">
+    <label for="title">Post Title</label>
+    <input type="text" id="title" required>
+
+    <label for="content">Content</label>
+    <textarea id="content" rows="6" required></textarea>
+
+    <label for="images">Add Images (up to 5)</label>
+    <label for="images" class="custom-file-label">Choose Images</label>
+    <input type="file" id="images" accept="image/*" multiple>
+    <div id="file-name-display"></div>
+    <div id="image-preview"></div>
+
+    <button type="submit">Publish</button>
+  </form>
+
+  <!-- Post List Section -->
+  <div class="post-list">
+    <h2>Existing Posts</h2>
+    <div id="postsContainer"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('postForm');
+    const imageInput = document.getElementById('images');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const previewContainer = document.getElementById('image-preview');
+    const postsContainer = document.getElementById('postsContainer');
+
+    let selectedImages = [];
+
+    imageInput.addEventListener('change', function () {
+      const newFiles = Array.from(imageInput.files);
+      selectedImages = [...selectedImages, ...newFiles].slice(0, 5);
+
+      fileNameDisplay.textContent = selectedImages.map(file => file.name).join(', ') || 'No files chosen';
+
+      previewContainer.innerHTML = '';
+      selectedImages.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          previewContainer.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const title = document.getElementById('title').value;
+      const content = document.getElementById('content').value;
+
+      if (selectedImages.length > 5) {
+        alert('Please upload no more than 5 images.');
+        return;
+      }
+
+      const post = {
+        title,
+        content,
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        images: []
+      };
+
+      const readers = [];
+
+      for (let i = 0; i < selectedImages.length; i++) {
+        const reader = new FileReader();
+        reader.readAsDataURL(selectedImages[i]);
+        readers.push(new Promise(resolve => {
+          reader.onload = () => resolve(reader.result);
+        }));
+      }
+
+      Promise.all(readers).then(results => {
+        post.images = results;
+        savePost(post);
+      });
+    });
+
+    function savePost(post) {
+      const existing = JSON.parse(localStorage.getItem('granite_posts') || '[]');
+      existing.unshift(post);
+      localStorage.setItem('granite_posts', JSON.stringify(existing));
+      localStorage.setItem('granite_timestamp', Date.now());
+      alert('Post published!');
+      window.location.href = 'dev.html'; // Reload the page to see the new post
+    }
+
+    function loadPosts() {
+      const posts = JSON.parse(localStorage.getItem('granite_posts') || '[]');
+      postsContainer.innerHTML = ''; // Clear existing posts
+
+      posts.forEach((post, index) => {
+        const postItem = document.createElement('div');
+        postItem.classList.add('post-item');
+        
+        postItem.innerHTML = `
+          <div>
+            <h3>${post.title}</h3>
+            <p>${post.date}</p>
+          </div>
+          <button class="delete-btn" onclick="deletePost(${index})">Delete</button>
+        `;
+
+        postsContainer.appendChild(postItem);
+      });
+    }
+
+    function deletePost(index) {
+      const posts = JSON.parse(localStorage.getItem('granite_posts') || '[]');
+      posts.splice(index, 1); // Remove the selected post
+      localStorage.setItem('granite_posts', JSON.stringify(posts));
+      loadPosts(); // Reload the posts after deletion
+    }
+
+    // Load posts on page load
+    loadPosts();
+  </script>
+</body>
+</html>
